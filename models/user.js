@@ -4,15 +4,22 @@ const db = require("../db");
 const User = db.define(
   "user",
   {
+    firstName: {
+      type: DataTypes.STRING, 
+      allowNull: true 
+    },
+    lastName: {
+      type: DataTypes.STRING, 
+      allowNull: true 
+    },
     email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      type: DataTypes.STRING, 
+      allowNull: false 
     },
-    password: {
+    passwordhash: {
       type: DataTypes.STRING,
-      allowNull: false,
-    },
+      allowNull: false
+    }, 
   },
   {}
 );

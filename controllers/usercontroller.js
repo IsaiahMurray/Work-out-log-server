@@ -10,24 +10,31 @@ router.post("/create", function (req, res) {
   /**********************************
    ********   USER CREATE   *********
    *********************************/
+
+  let firstName = req.body.user.firstName;
+  let lastName = req.body.user.lastName;
+  let email = req.body.user.email;
+  let pass = req.body.user.password;
+
   User.create({
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 13),
-  })
-    .then(function createSuccess(user) {
-      let token = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: 60 * 60 * 24 }
-      );
+    firstName: firstName,
+    lastName: lastName,
+    email: email,
+    passwordhash: bcrypt.hashSync(pass, 10)
+  }).then(
+    function createSuccess(user) {
+      let token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
 
       res.json({
         user: user,
-        message: "User successfully created!",
-        sessionToken: token,
+        message: 'created',
+        sessionToken: token
       });
-    })
-    .catch((err) => log(chalk.redBright(err)));
+    },
+    function createError(err) {
+      res.send(500, err.message);
+    }
+  );
   //--------------------------------------
 });
 /**********************************
@@ -35,36 +42,29 @@ router.post("/create", function (req, res) {
  *********************************/
 
 router.post("/login", function (req, res) {
-  User.findOne({
-    where: {
-      email: req.body.email,
-    },
-  })
-    .then(function loginSuccess(user) {
+  User.findOne({ where: { username: req.body.user.username } }).then(
+    function (user) {
       if (user) {
-        bcrypt.compare(req.body.password, user.password, function (
-          err,
-          matches
-        ) {
+        bcrypt.compare(req.body.user.password, user.passwordhash, function (err, matches) {
           if (matches) {
-            let token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-              expiresIn: 60 * 60 * 24,
-            });
-
-            res.status(200).json({
+            let token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+            res.json({
               user: user,
-              message: "User has been logged in!",
-              sessionToken: token,
+              message: "successfully authenticated",
+              sessionToken: token
             });
           } else {
-            res.status(502).send({ error: "Login failed!! Who are you?!" });
+            res.status(502).send({ error: "Login failed" });
           }
         });
       } else {
-        res.status(500).json({ error: "User does not exist." });
+        res.status(500).send({ error: "failed to authenticate" });
       }
-    })
-    .catch((err) => res.status(500).json({ error: err }));
+    },
+    function (err) {
+      res.status(501).send({ error: "Login failed" });
+    }
+  );
 });
 
 module.exports = router;
